@@ -1,6 +1,6 @@
-// Estrutura inicial do projeto com reconexão automática, keep-alive e gerenciamento de sessões
+// Estrutura inicial do projeto com botões interativos e listas
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, List, Buttons } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
@@ -73,20 +73,47 @@ client.on('message', async (msg) => {
             case 'email':
                 session.data.email = msg.body.trim();
                 session.state = 'gdpr';
-                await client.sendMessage(msg.from, messages.gdpr);
+                const gdprButtons = new Buttons(
+                    'Você aceita os termos de uso?', 
+                    [{ body: 'Sim' }, { body: 'Não' }], 
+                    'Confirmação',
+                    'Escolha uma opção:'
+                );
+                await client.sendMessage(msg.from, gdprButtons);
                 break;
             case 'gdpr':
-                session.data.gdprConsent = msg.body.trim() === '1';
+                session.data.gdprConsent = msg.body.trim() === 'Sim';
                 session.state = session.data.gdprConsent ? 'vm_number' : 'complete';
                 await client.sendMessage(msg.from, session.data.gdprConsent ? messages.vmNumber : messages.gdprDeclined);
                 break;
             case 'vm_number':
                 session.data.vmNumber = msg.body.trim();
                 session.state = 'menu';
-                await client.sendMessage(msg.from, messages.menu);
-                break;
-            case 'menu':
-                session.setMenuChoice(msg.body.trim(), client);
+                const menuList = new List(
+                    'Selecione uma opção abaixo:', 
+                    'Ver opções', 
+                    [
+                        {
+                            title: 'Suporte Técnico',
+                            rows: [
+                                { id: 'refund', title: 'Solicitar Reembolso', description: 'Problema com pagamento' },
+                                { id: 'malfunction', title: 'Reportar Falha', description: 'Máquina com defeito' },
+                                { id: 'out_of_order', title: 'Máquina Fora de Serviço', description: 'Máquina desligada ou quebrada' }
+                            ]
+                        },
+                        {
+                            title: 'Outros Serviços',
+                            rows: [
+                                { id: 'refill', title: 'Solicitar Reabastecimento', description: 'Máquina sem produtos' },
+                                { id: 'other', title: 'Outro Problema', description: 'Falar com o suporte' },
+                                { id: 'update', title: 'Atualizar Solicitação', description: 'Ver status do atendimento' }
+                            ]
+                        }
+                    ],
+                    'Menu Principal',
+                    'Suporte BDS'
+                );
+                await client.sendMessage(msg.from, menuList);
                 break;
             default:
                 await client.sendMessage(msg.from, messages.menuError);
@@ -95,16 +122,5 @@ client.on('message', async (msg) => {
         logger('ERROR', 'Processing message', error);
     }
 });
-
-// Keep-alive: envia uma mensagem para manter a sessão ativa a cada 15 minutos
-setInterval(async () => {
-    try {
-        const chat = await client.getChatById('YOUR_NUMBER@s.whatsapp.net');
-        await chat.sendMessage('Bot is active ✅');
-        logger('KEEP_ALIVE', 'Sent keep-alive message');
-    } catch (error) {
-        logger('KEEP_ALIVE', 'Error sending keep-alive message', error);
-    }
-}, 15 * 60 * 1000); // A cada 15 minutos
 
 client.initialize();
