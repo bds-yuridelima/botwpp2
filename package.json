@@ -1,0 +1,14 @@
+{
+  "name": "bot-wpb-bds",
+  "version": "1.0.0",
+  "description": "Bot de suporte para vending machines via WhatsApp",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.21.0",
+    "qrcode-terminal": "^0.12.0",
+    "@vitalets/google-translate-api": "^8.0.0"
+  }
+}
