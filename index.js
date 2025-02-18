@@ -1,4 +1,4 @@
-// Estrutura inicial do projeto com botões interativos e listas
+// Estrutura inicial do projeto com botões interativos, listas e controle de tentativas
 
 const { Client, LocalAuth, List, Buttons } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
@@ -64,56 +64,63 @@ client.on('message', async (msg) => {
             }
         }
 
+        // Controle de tentativas
+        const maxAttempts = 8;
+
         switch (session.state) {
             case 'name':
+                if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(msg.body.trim())) {
+                    session.attempts = (session.attempts || 0) + 1;
+                    if (session.attempts >= maxAttempts) {
+                        await client.sendMessage(msg.from, "Você excedeu o limite de tentativas. O atendimento foi encerrado.");
+                        sessionManager.removeSession(msg.from);
+                        return;
+                    }
+                    await client.sendMessage(msg.from, "Por favor, insira um nome válido (mínimo 2 letras, sem números). Tentativa " + session.attempts + "/8");
+                    return;
+                }
                 session.data.name = msg.body.trim();
+                session.attempts = 0;
                 session.state = 'email';
                 await client.sendMessage(msg.from, messages.email);
                 break;
             case 'email':
-                session.data.email = msg.body.trim();
+                if (msg.body.trim() !== '-' && !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(msg.body.trim())) {
+                    session.attempts++;
+                    if (session.attempts >= maxAttempts) {
+                        await client.sendMessage(msg.from, "Você excedeu o limite de tentativas. O atendimento foi encerrado.");
+                        sessionManager.removeSession(msg.from);
+                        return;
+                    }
+                    await client.sendMessage(msg.from, "O e-mail fornecido é inválido. Se não quiser informar, envie '-' para continuar. Tentativa " + session.attempts + "/8");
+                    return;
+                }
+                session.data.email = msg.body.trim() === '-' ? 'Não informado' : msg.body.trim();
+                session.attempts = 0;
                 session.state = 'gdpr';
                 const gdprButtons = new Buttons(
-                    'Você aceita os termos de uso?', 
+                    "Você aceita os termos de uso?", 
                     [{ body: 'Sim' }, { body: 'Não' }], 
-                    'Confirmação',
-                    'Escolha uma opção:'
+                    "Confirmação",
+                    "Escolha uma opção:"
                 );
                 await client.sendMessage(msg.from, gdprButtons);
                 break;
             case 'gdpr':
+                if (!['Sim', 'Não'].includes(msg.body.trim())) {
+                    session.attempts++;
+                    if (session.attempts >= maxAttempts) {
+                        await client.sendMessage(msg.from, "Você excedeu o limite de tentativas. O atendimento foi encerrado.");
+                        sessionManager.removeSession(msg.from);
+                        return;
+                    }
+                    await client.sendMessage(msg.from, "Por favor, escolha uma opção válida: 'Sim' ou 'Não'. Tentativa " + session.attempts + "/8");
+                    return;
+                }
                 session.data.gdprConsent = msg.body.trim() === 'Sim';
+                session.attempts = 0;
                 session.state = session.data.gdprConsent ? 'vm_number' : 'complete';
                 await client.sendMessage(msg.from, session.data.gdprConsent ? messages.vmNumber : messages.gdprDeclined);
-                break;
-            case 'vm_number':
-                session.data.vmNumber = msg.body.trim();
-                session.state = 'menu';
-                const menuList = new List(
-                    'Selecione uma opção abaixo:', 
-                    'Ver opções', 
-                    [
-                        {
-                            title: 'Suporte Técnico',
-                            rows: [
-                                { id: 'refund', title: 'Solicitar Reembolso', description: 'Problema com pagamento' },
-                                { id: 'malfunction', title: 'Reportar Falha', description: 'Máquina com defeito' },
-                                { id: 'out_of_order', title: 'Máquina Fora de Serviço', description: 'Máquina desligada ou quebrada' }
-                            ]
-                        },
-                        {
-                            title: 'Outros Serviços',
-                            rows: [
-                                { id: 'refill', title: 'Solicitar Reabastecimento', description: 'Máquina sem produtos' },
-                                { id: 'other', title: 'Outro Problema', description: 'Falar com o suporte' },
-                                { id: 'update', title: 'Atualizar Solicitação', description: 'Ver status do atendimento' }
-                            ]
-                        }
-                    ],
-                    'Menu Principal',
-                    'Suporte BDS'
-                );
-                await client.sendMessage(msg.from, menuList);
                 break;
             default:
                 await client.sendMessage(msg.from, messages.menuError);
