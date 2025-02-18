@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const sessionManager = require('./services/sessionManager');
 const messages = require('./messages');
-const machines = require('./machines.json');
+const { getValidMachines } = require('./services/machineService');
 const { handleRefund } = require('./handlers/refund');
 const { handleMalfunction } = require('./handlers/malfunction');
 const { handleOOO } = require('./handlers/outOfOrder');
@@ -71,7 +71,9 @@ client.on('message', async (msg) => {
         switch (session.state) {
             case 'vm_number':
                 const vmNumber = msg.body.trim();
-                if (!/^\d{4}$/.test(vmNumber) || !machines.machines.includes(Number(vmNumber))) {
+                const validMachines = getValidMachines();
+                
+                if (!/^\d{4}$/.test(vmNumber) || !validMachines.includes(Number(vmNumber))) {
                     session.attempts++;
                     if (session.attempts >= maxAttempts) {
                         await client.sendMessage(msg.from, "Você excedeu o limite de tentativas. O atendimento foi encerrado.");
