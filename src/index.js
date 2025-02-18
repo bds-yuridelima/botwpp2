@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const sessionManager = require('./services/sessionManager');
 const messages = require('./messages');
+const machines = require('./machines.json');
 const { handleRefund } = require('./handlers/refund');
 const { handleMalfunction } = require('./handlers/malfunction');
 const { handleOOO } = require('./handlers/outOfOrder');
@@ -68,59 +69,22 @@ client.on('message', async (msg) => {
         const maxAttempts = 8;
 
         switch (session.state) {
-            case 'name':
-                if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(msg.body.trim())) {
-                    session.attempts = (session.attempts || 0) + 1;
-                    if (session.attempts >= maxAttempts) {
-                        await client.sendMessage(msg.from, "Você excedeu o limite de tentativas. O atendimento foi encerrado.");
-                        sessionManager.removeSession(msg.from);
-                        return;
-                    }
-                    await client.sendMessage(msg.from, "Por favor, insira um nome válido (mínimo 2 letras, sem números). Tentativa " + session.attempts + "/8");
-                    return;
-                }
-                session.data.name = msg.body.trim();
-                session.attempts = 0;
-                session.state = 'email';
-                await client.sendMessage(msg.from, messages.email);
-                break;
-            case 'email':
-                if (msg.body.trim() !== '-' && !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(msg.body.trim())) {
+            case 'vm_number':
+                const vmNumber = msg.body.trim();
+                if (!/^\d{4}$/.test(vmNumber) || !machines.machines.includes(Number(vmNumber))) {
                     session.attempts++;
                     if (session.attempts >= maxAttempts) {
                         await client.sendMessage(msg.from, "Você excedeu o limite de tentativas. O atendimento foi encerrado.");
                         sessionManager.removeSession(msg.from);
                         return;
                     }
-                    await client.sendMessage(msg.from, "O e-mail fornecido é inválido. Se não quiser informar, envie '-' para continuar. Tentativa " + session.attempts + "/8");
+                    await client.sendMessage(msg.from, "Número da máquina inválido. Verifique e tente novamente. Tentativa " + session.attempts + "/8");
                     return;
                 }
-                session.data.email = msg.body.trim() === '-' ? 'Não informado' : msg.body.trim();
+                session.data.vmNumber = vmNumber;
                 session.attempts = 0;
-                session.state = 'gdpr';
-                const gdprButtons = new Buttons(
-                    "Você aceita os termos de uso?", 
-                    [{ body: 'Sim' }, { body: 'Não' }], 
-                    "Confirmação",
-                    "Escolha uma opção:"
-                );
-                await client.sendMessage(msg.from, gdprButtons);
-                break;
-            case 'gdpr':
-                if (!['Sim', 'Não'].includes(msg.body.trim())) {
-                    session.attempts++;
-                    if (session.attempts >= maxAttempts) {
-                        await client.sendMessage(msg.from, "Você excedeu o limite de tentativas. O atendimento foi encerrado.");
-                        sessionManager.removeSession(msg.from);
-                        return;
-                    }
-                    await client.sendMessage(msg.from, "Por favor, escolha uma opção válida: 'Sim' ou 'Não'. Tentativa " + session.attempts + "/8");
-                    return;
-                }
-                session.data.gdprConsent = msg.body.trim() === 'Sim';
-                session.attempts = 0;
-                session.state = session.data.gdprConsent ? 'vm_number' : 'complete';
-                await client.sendMessage(msg.from, session.data.gdprConsent ? messages.vmNumber : messages.gdprDeclined);
+                session.state = 'menu';
+                await client.sendMessage(msg.from, messages.menu);
                 break;
             default:
                 await client.sendMessage(msg.from, messages.menuError);
