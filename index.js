@@ -1,10 +1,10 @@
-// Estrutura inicial do projeto com reconexão automática e keep-alive
+// Estrutura inicial do projeto com reconexão automática, keep-alive e gerenciamento de sessões
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
-const SessionManager = require('./services/sessionManager');
+const sessionManager = require('./services/sessionManager');
 const messages = require('./messages');
 const { handleRefund } = require('./handlers/refund');
 const { handleMalfunction } = require('./handlers/malfunction');
@@ -28,7 +28,6 @@ const logger = (module, action, data) => {
 };
 
 const client = new Client({ authStrategy: new LocalAuth(), puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'] } });
-const sessions = new SessionManager();
 
 const stateHandlers = {
     refund_: handleRefund,
@@ -54,8 +53,8 @@ client.on('auth_failure', (msg) => {
 
 client.on('message', async (msg) => {
     logger('MESSAGE', 'Received', { from: msg.from, body: msg.body });
-    const session = sessions.getSession(msg.from);
-    session.updateLastInteraction();
+    const session = sessionManager.getSession(msg.from);
+    sessionManager.updateLastInteraction(msg.from);
     
     try {
         for (const prefix in stateHandlers) {
@@ -67,22 +66,22 @@ client.on('message', async (msg) => {
 
         switch (session.state) {
             case 'name':
-                session.setName(msg.body.trim());
+                session.data.name = msg.body.trim();
                 session.state = 'email';
                 await client.sendMessage(msg.from, messages.email);
                 break;
             case 'email':
-                session.setEmail(msg.body.trim());
+                session.data.email = msg.body.trim();
                 session.state = 'gdpr';
                 await client.sendMessage(msg.from, messages.gdpr);
                 break;
             case 'gdpr':
-                session.setGDPR(msg.body.trim());
-                session.state = 'vm_number';
-                await client.sendMessage(msg.from, messages.vmNumber);
+                session.data.gdprConsent = msg.body.trim() === '1';
+                session.state = session.data.gdprConsent ? 'vm_number' : 'complete';
+                await client.sendMessage(msg.from, session.data.gdprConsent ? messages.vmNumber : messages.gdprDeclined);
                 break;
             case 'vm_number':
-                session.setVmNumber(msg.body.trim());
+                session.data.vmNumber = msg.body.trim();
                 session.state = 'menu';
                 await client.sendMessage(msg.from, messages.menu);
                 break;
@@ -97,7 +96,7 @@ client.on('message', async (msg) => {
     }
 });
 
-// Keep-alive: envia uma mensagem para manter a sessão ativa a cada 30 minutos
+// Keep-alive: envia uma mensagem para manter a sessão ativa a cada 15 minutos
 setInterval(async () => {
     try {
         const chat = await client.getChatById('YOUR_NUMBER@s.whatsapp.net');
@@ -106,6 +105,6 @@ setInterval(async () => {
     } catch (error) {
         logger('KEEP_ALIVE', 'Error sending keep-alive message', error);
     }
-}, 15 * 60 * 1000); // A cada 30 minutos
+}, 15 * 60 * 1000); // A cada 15 minutos
 
 client.initialize();
