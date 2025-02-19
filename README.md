@@ -13,3 +13,14 @@
 │── package.json       # Dependências do projeto
 │── README.md          # Documentação do projeto
 
+=====================================================
+INICIAR BOT
+
+# Construir a imagem do Docker
+docker build -t botwpp2 .
+
+# Rodar o container
+docker run --env-file .env -v $(pwd)/logs:/app/logs botwpp2
+
+=====================================================
+
