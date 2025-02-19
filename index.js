@@ -1,95 +1,38 @@
-const { Client, Buttons } = require('whatsapp-web.js');
+// src/index.js
+const { Client } = require('whatsapp-web.js');
 const fs = require('fs');
-const csv = require('csv-parser');
-const client = new Client();
-const { validateName, validateEmail, validateMachineNumber } = require('./services/validation');
-const { sendMessage, typingDelay } = require('./services/utils');
-const { getSession, resetSession, updateSession } = require('./services/session');
-const responses = require('./messages/responses');
 const settings = require('./config/settings');
+const interactionHandler = require('./handlers/interaction');
+const { log } = require('./services/utils');
 
-const machineNumbers = new Set();
+// Carregar configurações globais
+const { sessionFilePath, limitAttempts } = settings;
 
-// Load valid machine numbers from CSV
-fs.createReadStream('machines.csv')
-  .pipe(csv())
-  .on('data', (row) => machineNumbers.add(row.number))
-  .on('end', () => console.log('Machine numbers loaded.'));
+// Inicializar o WhatsApp Web Client
+const client = new Client();
 
-client.on('message', async (msg) => {
-    const user = msg.from;
-    let session = getSession(user);
-    
-    if (!session) {
-        resetSession(user);
-        sendMessage(user, responses.welcome);
-        setTimeout(() => askName(user), typingDelay(50));
-    }
+client.on('qr', (qr) => {
+  console.log('QR RECEIVED', qr);
+  // Aqui você pode salvar o QR Code para que o usuário possa escaneá-lo
 });
 
-async function askName(user) {
-    updateSession(user, 'yourName');
-    sendMessage(user, responses.yourName);
-}
-
-client.on('message_create', async (msg) => {
-    const user = msg.from;
-    let session = getSession(user);
-    if (!session) return;
-    
-    switch (session.step) {
-        case 'yourName':
-            if (validateName(msg.body)) {
-                updateSession(user, 'yourEmail', { name: msg.body.trim() });
-                setTimeout(() => askEmail(user), typingDelay(60));
-            } else {
-                handleRetry(user, askName, responses.invalidName);
-            }
-            break;
-        
-        case 'yourEmail':
-            if (validateEmail(msg.body)) {
-                updateSession(user, 'grpd', { email: msg.body.trim() });
-                setTimeout(() => askConsent(user), typingDelay(80));
-            } else {
-                handleRetry(user, askEmail, responses.invalidEmail);
-            }
-            break;
-        
-        case 'vmNumber':
-            if (validateMachineNumber(msg.body, machineNumbers)) {
-                updateSession(user, 'menu', { machineNumber: msg.body.trim() });
-                sendMessage(user, responses.machineConfirmed);
-            } else {
-                handleRetry(user, askMachineNumber, responses.invalidMachineNumber);
-            }
-            break;
-    }
+client.on('ready', () => {
+  console.log('Client is ready!');
 });
 
-function askEmail(user) {
-    sendMessage(user, responses.yourEmail);
-}
+client.on('message', async (message) => {
+  try {
+    // Lidar com a mensagem recebida
+    await interactionHandler.handleMessage(client, message);
+  } catch (error) {
+    log.error('Error handling message:', error);
+  }
+});
 
-function askConsent(user) {
-    const buttons = new Buttons(responses.grpd, [{ body: "1 - Yes, I agree" }, { body: "2 - No, I do not agree" }]);
-    client.sendMessage(user, buttons);
-}
+client.on('disconnected', (reason) => {
+  console.log('Client was disconnected:', reason);
+  // Lidar com a desconexão
+});
 
-function askMachineNumber(user) {
-    sendMessage(user, responses.vmNumber);
-}
-
-function handleRetry(user, retryFunction, errorMessage) {
-    let session = getSession(user);
-    session.attempts++;
-    if (session.attempts >= settings.MAX_ATTEMPTS) {
-        sendMessage(user, responses.exceededMsg);
-        resetSession(user);
-    } else {
-        sendMessage(user, errorMessage);
-        setTimeout(() => retryFunction(user), typingDelay(40));
-    }
-}
-
+// Iniciar o cliente
 client.initialize();
