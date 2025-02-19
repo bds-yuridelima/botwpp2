@@ -1,0 +1,10 @@
+botwpp2/
+├── src/
+│   ├── handlers/
+│   ├── utils/
+│   └── index.js
+├── .env
+├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
+└── package.json
