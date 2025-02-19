@@ -7,11 +7,10 @@ WORKDIR /usr/src/app
 # Install necessary dependencies for Chrome
 RUN apt-get update \
     && apt-get install -y wget gnupg \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
     && apt-get update \
-    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
-      --no-install-recommends \
+    & apt-get install -y google-chrome-stable --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files and install dependencies
@@ -25,8 +24,7 @@ COPY . .
 RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
     && mkdir -p /home/pptruser/Downloads \
     && chown -R pptruser:pptruser /home/pptruser \
-    && chown -R pptruser:pptruser /usr/src/app \
-    && chown -R pptruser:pptruser /usr/src/app/node_modules
+    && chown -R pptruser:pptruser /usr/src/app
 
 # Run everything after as non-privileged user.
 USER pptruser
@@ -35,4 +33,4 @@ USER pptruser
 EXPOSE 3000
 
 # Run the app
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
