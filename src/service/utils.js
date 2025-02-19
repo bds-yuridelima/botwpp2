@@ -1,7 +1,14 @@
+// src/services/utils.js
 const { Client } = require('whatsapp-web.js');
-const client = new Client();
 
-module.exports = {
-    sendMessage: (user, message) => client.sendMessage(user, message),
-    typingDelay: (length) => Math.min(5000, length * 100)
-};
+async function sendMessageWithTyping(chat, message) {
+  await chat.sendStateTyping();
+  await new Promise((resolve) => setTimeout(resolve, 1000)); // Simular digitação
+  await chat.sendMessage(message);
+}
+
+function log(message) {
+  console.log(message);
+}
+
+module.exports = { sendMessageWithTyping, log };
