@@ -1,20 +1,18 @@
-# Usa uma imagem oficial do Node.js LTS como base
+# Use the official Node.js LTS image
 FROM node:18
 
-# Define o diretório de trabalho dentro do container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copia os arquivos essenciais para o container
+# Copy package files and install dependencies
 COPY package.json package-lock.json ./
-
-# Instala as dependências do projeto
 RUN npm install
 
-# Copia todo o restante do código para dentro do container
+# Copy the entire project
 COPY . .
 
-# Expõe a porta usada pelo bot (caso usemos uma API futuramente)
+# Expose the necessary port
 EXPOSE 3000
 
-# Comando para iniciar o bot
-CMD ["node", "src/index.js"]
+# Start the bot
+CMD ["node", "index.js"]
