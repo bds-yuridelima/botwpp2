@@ -72,7 +72,7 @@ function askEmail(user) {
 }
 
 function askConsent(user) {
-    const buttons = new Buttons(responses.grpd, [{ body: "1 - Sim, concordo" }, { body: "2 - Não, não concordo" }]);
+    const buttons = new Buttons(responses.grpd, [{ body: "1 - Yes, I agree" }, { body: "2 - No, I do not agree" }]);
     client.sendMessage(user, buttons);
 }
 
