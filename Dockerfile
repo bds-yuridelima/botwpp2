@@ -4,18 +4,21 @@ FROM node:18
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package and lock files first to leverage Docker caching
 COPY package.json package-lock.json ./
 RUN npm install --only=production
 
-# Copy the entire project, garantindo que todas as pastas sejam copiadas
-COPY . .
+# Copy the entire project to the container
+COPY . /app
 
-# Garantir que o diretório de logs exista
+# Ensure logs directory exists
 RUN mkdir -p /app/logs
 
-# Expor a porta necessária
+# Set NODE_PATH to avoid module resolution issues
+ENV NODE_PATH=/app/src
+
+# Expose necessary port
 EXPOSE 3000
 
-# Iniciar o bot
+# Start the bot
 CMD ["node", "index.js"]
