@@ -1,17 +1,29 @@
-FROM node:16
+# Use a Node.js image
+FROM node:16-slim
 
-# Create app directory
-WORKDIR /usr/src/app
+# Install necessary dependencies for Chrome
+RUN apt-get update \
+    && apt-get install -y wget gnupg \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
+      --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install app dependencies
-COPY package*.json ./
-RUN npm install
+# Install Puppeteer so it's available in the container
+RUN npm init -y && \
+    npm i puppeteer
 
-# Bundle app source
-COPY . .
+# Add user so we don't need --no-sandbox.
+RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
+    && mkdir -p /home/pptruser/Downloads \
+    && chown -R pptruser:pptruser /home/pptruser \
+    && chown -R pptruser:pptruser /node_modules \
+    && chown -R pptruser:pptruser /package.json \
+    && chown -R pptruser:pptruser /package-lock.json
 
-# Expose port the app runs on
-EXPOSE 3000
+# Run everything after as non-privileged user.
+USER pptruser
 
-# Start the app
-CMD [ "node", "src/index.js" ]
+CMD ["google-chrome-stable"]
