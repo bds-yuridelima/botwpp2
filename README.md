@@ -29,3 +29,19 @@ docker run --env-file .env -v $(pwd)/logs:/app/logs botwpp2
 
 =====================================================
 
+# WhatsApp Bot for Vending Machines
+
+## Overview
+This project is a WhatsApp Bot designed to handle customer service interactions for vending machines in Ireland.
+
+## Getting Started
+### Prerequisites
+- Node.js
+- Docker
+
+### Installation
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/yourusername/botwpp2.git
+   cd botwpp2
+
