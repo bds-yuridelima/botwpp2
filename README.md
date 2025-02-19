@@ -1,4 +1,4 @@
-/bot-wpb-bds
+/botwpp2
 │── /src
 │   ├── /config        # Configurações globais (ex: variáveis de ambiente)
 │   ├── /handlers      # Módulos de cada fluxo (refund, malfunction, etc.)
