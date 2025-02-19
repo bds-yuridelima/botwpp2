@@ -5,17 +5,17 @@ FROM node:18
 WORKDIR /app
 
 # Copy package files and install dependencies
-COPY package.json package-lock.json index.js ./
+COPY package.json package-lock.json ./
 RUN npm install --only=production
 
-# Copy the entire project
-COPY . ./
+# Copy the entire project, garantindo que todas as pastas sejam copiadas
+COPY . .
 
-# Ensure logs directory exists
+# Garantir que o diretório de logs exista
 RUN mkdir -p /app/logs
 
-# Expose the necessary port
+# Expor a porta necessária
 EXPOSE 3000
 
-# Start the bot
+# Iniciar o bot
 CMD ["node", "index.js"]
