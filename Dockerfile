@@ -13,7 +13,7 @@ RUN apt-get update \
     && apt-get install -y google-chrome-stable --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package files and install dependencies
+# Install Puppeteer so it's available in the container
 COPY package*.json ./
 RUN npm ci
 
