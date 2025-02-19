@@ -1,17 +1,25 @@
 {
   "name": "botwpp2",
   "version": "1.0.0",
-  "lockfileVersion": 2,
-  "requires": true,
+  "description": "WhatsApp Bot for customer service using whatsapp-web.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "whatsapp-web.js": {
-      "version": "^1.19.5"
-    },
-    "qrcode-terminal": {
-      "version": "^0.12.0"
-    },
-    "csv-parser": {
-      "version": "^3.0.0"
-    }
-  }
+    "whatsapp-web.js": "^1.19.5",
+    "qrcode-terminal": "^0.12.0",
+    "csv-parser": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bds-yuridelima/botwpp2.git"
+  },
+  "keywords": ["whatsapp", "bot", "customer-service"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bds-yuridelima/botwpp2/issues"
+  },
+  "homepage": "https://github.com/bds-yuridelima/botwpp2#readme"
 }
