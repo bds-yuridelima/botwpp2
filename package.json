@@ -1,0 +1,19 @@
+{
+  "name": "botwpp2",
+  "version": "1.0.0",
+  "description": "Chat bot para WhatsApp Business usando whatsapp-web.js",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.14.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  },
+  "author": "",
+  "license": "ISC"
+}
