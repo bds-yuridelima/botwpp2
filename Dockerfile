@@ -9,7 +9,7 @@ COPY package.json package-lock.json ./
 RUN npm install --only=production
 
 # Copy the entire project to the container
-COPY . /app
+COPY src /app/src
 
 # Ensure logs directory exists
 RUN mkdir -p /app/logs
