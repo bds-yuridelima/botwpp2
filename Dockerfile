@@ -6,10 +6,13 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --only=production
 
 # Copy the entire project
 COPY . .
+
+# Ensure logs directory exists
+RUN mkdir -p /app/logs
 
 # Expose the necessary port
 EXPOSE 3000
