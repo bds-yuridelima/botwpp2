@@ -18,13 +18,16 @@ RUN apt-get update \
 COPY package*.json ./
 RUN npm cache clean --force && npm ci
 
+# Ensure the /node_modules directory exists
+RUN mkdir -p /usr/src/app/node_modules
+
 # Add user so we don't need --no-sandbox.
 RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
     && mkdir -p /home/pptruser/Downloads \
     && chown -R pptruser:pptruser /home/pptruser \
-    && chown -R pptruser:pptruser /node_modules \
-    && chown -R pptruser:pptruser /package.json \
-    && chown -R pptruser:pptruser /package-lock.json
+    && chown -R pptruser:pptruser /usr/src/app/node_modules \
+    && chown -R pptruser:pptruser /usr/src/app/package.json \
+    && chown -R pptruser:pptruser /usr/src/app/package-lock.json
 
 # Run everything after as non-privileged user.
 USER pptruser
