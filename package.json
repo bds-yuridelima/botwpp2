@@ -1,0 +1,17 @@
+{
+  "name": "botwpp2",
+  "version": "1.0.0",
+  "lockfileVersion": 2,
+  "requires": true,
+  "dependencies": {
+    "whatsapp-web.js": {
+      "version": "^1.19.5"
+    },
+    "qrcode-terminal": {
+      "version": "^0.12.0"
+    },
+    "csv-parser": {
+      "version": "^3.0.0"
+    }
+  }
+}
