@@ -1,21 +1,18 @@
-# Use the official Node.js LTS image
-FROM node:18
+# Dockerfile
+FROM node:16
 
-# Set the working directory inside the container
-WORKDIR /app
+# Create app directory
+WORKDIR /usr/src/app
 
-# Copy package files and install dependencies
-COPY package.json package-lock.json ./
-RUN npm install --only=production
+# Install app dependencies
+COPY package*.json ./
+RUN npm install
 
-# Copy the entire project to the container
+# Bundle app source
 COPY . .
 
-# Ensure logs directory exists
-RUN mkdir -p /app/logs
-
-# Expose necessary port
+# Expose port the app runs on
 EXPOSE 3000
 
-# Start the bot
-CMD ["node", "index.js"]
+# Start the app
+CMD [ "node", "src/index.js" ]
