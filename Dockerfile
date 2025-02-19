@@ -1,6 +1,9 @@
 # Use a Node.js image
 FROM node:16-slim
 
+# Create app directory
+WORKDIR /usr/src/app
+
 # Install necessary dependencies for Chrome
 RUN apt-get update \
     && apt-get install -y wget gnupg \
@@ -12,8 +15,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Puppeteer so it's available in the container
-RUN npm init -y && \
-    npm i puppeteer
+COPY package*.json ./
+RUN npm cache clean --force && npm ci
 
 # Add user so we don't need --no-sandbox.
 RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
@@ -26,4 +29,4 @@ RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
 # Run everything after as non-privileged user.
 USER pptruser
 
-CMD ["google-chrome-stable"]
+CMD ["node", "src/index.js"]
